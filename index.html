@@ -1,4 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Calculatorfun</title>
+<meta name="description" content="Throw two numbers and a potion into Mira's cauldron and she brews the answer. A playful math game for kids.">
+<meta name="theme-color" content="#241634">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Calculatorfun">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap">
@@ -14,12 +25,13 @@
   --font-display:'Baloo 2','Chalkboard SE','Comic Sans MS',system-ui,sans-serif;
   color-scheme:dark;
 }
-html{height:100%;box-sizing:border-box;background:var(--night)}
-body{height:100%;margin:0;background:var(--night);color:var(--paper);overflow:hidden;font-family:var(--font-display);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+html{height:100%;box-sizing:border-box;background:var(--night);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+body{height:100%;margin:0;-webkit-touch-callout:none;background:var(--night);color:var(--paper);overflow:hidden;font-family:var(--font-display);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 #stage{position:relative;width:100%;height:100%;overflow:hidden}
 #game{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 #game.grabbing{cursor:grabbing}
-.hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:10px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));pointer-events:none}
+.hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px 0;pointer-events:none}
+@media (orientation:landscape) and (max-height:520px){.brand{visibility:hidden}}
 .brand{font-weight:800;font-size:clamp(19px,3.2vw,28px);line-height:1;letter-spacing:.01em;color:var(--paper);text-shadow:0 3px 0 rgba(0,0,0,.28)}
 .brand span{color:var(--butter)}
 .btns{display:flex;gap:8px;pointer-events:auto}
@@ -38,7 +50,8 @@ body{height:100%;margin:0;background:var(--night);color:var(--paper);overflow:hi
 @media (prefers-reduced-motion:reduce){#say.pop{animation:none}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
-
+</head>
+<body>
 <div id="stage">
   <canvas id="game" aria-label="Mira's cauldron. Throw two numbers and one potion into the cauldron. Keyboard: number keys 1 to 9, 0 for ten, and + - * / for potions."></canvas>
   <div class="hud">
@@ -144,16 +157,16 @@ function say(text, big=false){
 }
 function positionSay(){
   if (!L) return;
-  const s = L.s, hx = L.cx, hy = L.mouthY - 175*s;
-  const roomR = L.rightLimit - (hx + 66*s), roomL = (hx - 66*s) - L.leftLimit;
+  const s = L.s, hx = L.cx, hy = L.mouthY - 128*s, off = 94*s;
+  const roomR = L.rightLimit - (hx + off), roomL = (hx - off) - L.leftLimit;
   const right = roomR >= roomL;
   const room = Math.max(96, Math.min(260, right ? roomR : roomL));
   sayEl.style.maxWidth = room + 'px';
   sayEl.classList.toggle('left', right);
   sayEl.classList.toggle('right', !right);
   const w = sayEl.offsetWidth, h = sayEl.offsetHeight;
-  const x = right ? hx + 66*s + 10 : hx - 66*s - 10 - w;
-  const y = clamp(hy - h/2, L.top - 8, H - h - 8);
+  const x = right ? hx + off + 10 : hx - off - 10 - w;
+  const y = clamp(hy - h/2, 8, H - h - 8);
   sayEl.style.left = Math.round(x) + 'px';
   sayEl.style.top = Math.round(y) + 'px';
 }
@@ -166,46 +179,53 @@ function nextPrompt(){
 }
 
 /* ---------- layout ---------- */
+/* Witch + cauldron need about 1.5 cauldron-widths of height (hat tip to cauldron feet). */
+const SCENE_H = 1.5;
 function computeLayout(){
   W = stage.clientWidth; H = stage.clientHeight;
   DPR = Math.min(window.devicePixelRatio || 1, 2.5);
   canvas.width = Math.round(W*DPR); canvas.height = Math.round(H*DPR);
   const portrait = H > W*1.05;
-  const top = H < 520 ? 58 : 72;
-  const l = {portrait, top, shelves:[], slotPos:[]};
+  const short = H < 520;
+  const l = {portrait, shelves:[], slotPos:[]};
   if (portrait) {
-    const r = Math.max(18, Math.min(W/12.5, H/20, 40));
-    const rowH = r*2 + Math.max(14, r*.8);
-    const gap = (W-24)/5;
+    const top = 66;
+    const r = Math.max(18, Math.min(W/11.6, H/22, 48));
+    const rowH = r*2 + Math.max(12, r*.72);
+    const gap = (W-16)/5;
     for (let i=0;i<10;i++){
       const row = i<5?0:1, col = i%5;
-      l.slotPos.push({kind:'num', value:i+1, x:12+gap*(col+.5), y:top+r+row*rowH});
+      l.slotPos.push({kind:'num', value:i+1, x:8+gap*(col+.5), y:top+r+row*rowH});
     }
-    const opsY = top + r + 2*rowH, g2 = (W-24)/4;
-    OPS.forEach((op,i)=>l.slotPos.push({kind:'op', op:i, x:12+g2*(i+.5), y:opsY}));
-    for (let k=0;k<3;k++) l.shelves.push({x1:6, x2:W-6, y:top+r+k*rowH+r+1});
+    const opsY = top + r + 2*rowH, g2 = (W-16)/4;
+    OPS.forEach((op,i)=>l.slotPos.push({kind:'op', op:i, x:8+g2*(i+.5), y:opsY}));
+    for (let k=0;k<3;k++) l.shelves.push({x1:4, x2:W-4, y:top+r+k*rowH+r+1});
     const opsBottom = opsY + r + 14;
-    l.r = r; l.bottom = H - 22; l.cx = W/2;
-    l.kw = Math.max(120, Math.min(W*.68, 340, (l.bottom - opsBottom - 12)/1.82));
-    l.leftLimit = 10; l.rightLimit = W - 10;
+    l.top = top; l.r = r; l.bottom = H - 16; l.cx = W/2;
+    l.kw = Math.max(120, Math.min(W*.76, 400, (l.bottom - opsBottom)/SCENE_H));
+    l.leftLimit = 8; l.rightLimit = W - 8;
   } else {
-    const r = Math.max(16, Math.min((H-top-12)/5/2.45, W/24, 42));
-    const rowH = (H-top-12)/5, rowH4 = (H-top-12)/4;
-    const lx0 = 16 + r*1.15, lx1 = lx0 + r*2.45, ox = W - 16 - r*1.25;
+    const top = short ? 10 : 70;
+    const r = Math.max(18, Math.min((H-top-12)/5/2.3, W/21, 48));
+    const rowH = (H-top-12)/5;
+    const lx0 = 12 + r*1.15, lx1 = lx0 + r*2.4;
     for (let k=0;k<5;k++){
-      const y = top + rowH*(k+1) - r - 8;
+      const y = top + rowH*(k+1) - r - 6;
       l.slotPos.push({kind:'num', value:k*2+1, x:lx0, y}, {kind:'num', value:k*2+2, x:lx1, y});
-      l.shelves.push({x1:6, x2:lx1+r*1.3, y:y+r+1});
+      l.shelves.push({x1:4, x2:lx1+r*1.3, y:y+r+1});
     }
+    // potions: 2 x 2 on the right wall, below the buttons
+    const opTop = 64, rowO = (H-opTop-12)/2;
+    const ox1 = W - 12 - r*1.2, ox0 = ox1 - r*2.4;
     OPS.forEach((op,k)=>{
-      const y = top + rowH4*(k+1) - r - 8;
-      l.slotPos.push({kind:'op', op:k, x:ox, y});
-      l.shelves.push({x1:ox-r*1.45, x2:W-6, y:y+r+1});
+      const y = opTop + rowO*((k>>1)+1) - r - 6;
+      l.slotPos.push({kind:'op', op:k, x:(k%2) ? ox1 : ox0, y});
+      if (k%2) l.shelves.push({x1:ox0-r*1.3, x2:W-4, y:y+r+1});
     });
-    const leftEdge = lx1 + r*1.5, rightEdge = ox - r*1.5;
-    l.r = r; l.bottom = H - 18; l.cx = (leftEdge+rightEdge)/2;
-    l.kw = Math.max(120, Math.min((rightEdge-leftEdge)*.6, (l.bottom-12)/1.85, 400));
-    l.leftLimit = leftEdge - r*.4; l.rightLimit = ox - r*1.4;
+    const leftEdge = lx1 + r*1.4, rightEdge = ox0 - r*1.4;
+    l.top = top; l.r = r; l.bottom = H - 12; l.cx = (leftEdge+rightEdge)/2;
+    l.kw = Math.max(120, Math.min((rightEdge-leftEdge)*.66, (l.bottom-4)/SCENE_H, 440));
+    l.leftLimit = leftEdge - r*.3; l.rightLimit = rightEdge + r*.3;
   }
   l.s = l.kw/300;
   l.mouthY = l.bottom - l.kw*.62;
@@ -278,7 +298,7 @@ function buildBackground(){
   b.fillStyle = 'rgba(255,216,107,.08)';
   for (let y=40; y<H; y+=56) for (let x=(y/56%2)*28+14; x<W; x+=56) { b.beginPath(); b.arc(x,y,1.6,0,7); b.fill(); }
   // round window behind Mira
-  const kw = L.kw, wx = L.cx, wy = L.mouthY - .6*kw, R = .56*kw;
+  const kw = L.kw, wx = L.cx, wy = L.mouthY - .5*kw, R = .48*kw;
   L.win = {x:wx, y:wy, R};
   const sg = b.createRadialGradient(wx, wy-R*.3, R*.1, wx, wy, R);
   sg.addColorStop(0,'#3a2a78'); sg.addColorStop(1,'#160f30');
@@ -465,7 +485,7 @@ function finishBrew(){
   Body.setVelocity(rb, {x:(Math.random()<.5?-1:1)*rand(3.2,5.6), y:-rand(15,18)});
   sparkles(); sfx.tada(); buzz([10,40,20]);
   S.happy = now; S.liquid = [255,214,120];
-  say(`Ta-da! ${left} = ${label}`, true);
+  say(`Ta-da! ${`${left} = ${label}`.replace(/ /g, '\u00a0')}`, true);
 }
 
 /* ---------- particles ---------- */
@@ -533,71 +553,82 @@ function drawWindowStars(t){
     ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, 7); ctx.fill();
   }
 }
+/* Mira: an original chibi witch in a soft kawaii style (wide round face, dot eyes, pastel flat colours, outlines). */
+const MIRA = {line:'#3b2a4f', face:'#fffaf6', hair:'#ffb6d3', hairDark:'#f594bd', dress:'#ff8fbf', collar:'#ffffff', hat:'#8f6be8', band:'#ff6fa8', star:'#ffd86b', blush:'rgba(255,120,160,.5)'};
+function outlined(fill, lw=5){ ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = MIRA.line; ctx.stroke(); }
 function drawWitch(t){
-  const s = L.s;
+  const s = L.s, M = MIRA;
   const brewing = S.phase === 'brewing';
-  const hp = (now - S.happy)/450, hop = hp < 1 ? -Math.sin(hp*Math.PI)*14 : 0;
+  const hp = (now - S.happy)/450, hop = hp < 1 ? -Math.sin(hp*Math.PI)*12 : 0;
   const sp = (now - S.shake)/520, shake = sp < 1 ? Math.sin(sp*30)*7*(1-sp) : 0;
-  const bob = reduceMotion ? 0 : Math.sin(t/650)*3;
+  const bob = reduceMotion ? 0 : Math.sin(t/650)*2.5;
   ctx.save(); ctx.translate(L.cx, L.mouthY); ctx.scale(s, s); ctx.translate(0, bob + hop);
-  // dress
-  ctx.fillStyle = '#7a5cc7';
-  ctx.beginPath(); ctx.moveTo(-40,-112); ctx.quadraticCurveTo(-92,-30,-104,40); ctx.lineTo(104,40); ctx.quadraticCurveTo(92,-30,40,-112); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = 'rgba(255,216,107,.85)';
-  [[-50,-30],[30,-60],[60,-12],[-20,-70],[0,-20]].forEach(([x,y])=>star(x,y,5,2.2,5));
-  ctx.fillStyle = '#fff6e4';
-  ctx.beginPath(); ctx.ellipse(-15,-110,22,10,.35,0,7); ctx.ellipse(15,-110,22,10,-.35,0,7); ctx.fill();
-  // stirring
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  // little dress
+  ctx.beginPath(); ctx.moveTo(-34,-62); ctx.quadraticCurveTo(-68,-10,-80,34); ctx.lineTo(80,34); ctx.quadraticCurveTo(68,-10,34,-62); ctx.closePath();
+  outlined(M.dress);
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  [[-46,4],[40,-14],[10,18],[-14,-30]].forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(x,y,3.2,0,7); ctx.fill(); });
+  ctx.beginPath(); ctx.ellipse(-15,-60,19,9,.35,0,7); outlined(M.collar, 3.5);
+  ctx.beginPath(); ctx.ellipse(15,-60,19,9,-.35,0,7); outlined(M.collar, 3.5);
+  // stirring spoon + stubby arms
   const ang = brewing ? t/120 : (reduceMotion ? 0 : Math.sin(t/900)*.7);
-  const hx = Math.cos(ang)*30 + 14, hy = -40 + Math.sin(ang)*7;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = '#6b4329'; ctx.lineWidth = 10;
-  ctx.beginPath(); ctx.moveTo(hx+14, hy-48); ctx.lineTo(hx*.35, 16); ctx.stroke();
-  ctx.strokeStyle = '#b07a4f'; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(hx+14, hy-48); ctx.lineTo(hx*.35, 16); ctx.stroke();
-  // sleeves
-  ctx.strokeStyle = '#6a4cb7'; ctx.lineWidth = 22;
-  ctx.beginPath(); ctx.moveTo(-36,-96); ctx.quadraticCurveTo(-40,-50, hx-4, hy+4); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(36,-96); ctx.quadraticCurveTo(56,-70, hx+10, hy-16); ctx.stroke();
-  ctx.fillStyle = '#ffe3d3';
-  ctx.beginPath(); ctx.arc(hx-4, hy+4, 11, 0, 7); ctx.arc(hx+10, hy-16, 11, 0, 7); ctx.fill();
+  const hx = Math.cos(ang)*24 + 10, hy = -22 + Math.sin(ang)*6;
+  ctx.strokeStyle = M.line; ctx.lineWidth = 13;
+  ctx.beginPath(); ctx.moveTo(hx+12, hy-44); ctx.lineTo(hx*.35, 16); ctx.stroke();
+  ctx.strokeStyle = '#d29a64'; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(hx+12, hy-44); ctx.lineTo(hx*.35, 16); ctx.stroke();
+  const arm = (x0,y0,cx1,cy1,x1,y1)=>{
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.quadraticCurveTo(cx1,cy1,x1,y1);
+    ctx.strokeStyle = M.line; ctx.lineWidth = 27; ctx.stroke();
+    ctx.strokeStyle = M.dress; ctx.lineWidth = 18; ctx.stroke();
+  };
+  arm(-30,-50, -34,-14, hx-6, hy+6);
+  arm(30,-50, 46,-36, hx+10, hy-14);
+  ctx.beginPath(); ctx.arc(hx-6, hy+6, 10.5, 0, 7); outlined(M.face, 4);
+  ctx.beginPath(); ctx.arc(hx+10, hy-14, 10.5, 0, 7); outlined(M.face, 4);
   // head
-  ctx.save(); ctx.translate(shake, -168);
-  ctx.fillStyle = '#ff8fb8';
-  ctx.beginPath(); ctx.ellipse(0, 10, 72, 64, 0, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.arc(-66, 34, 22, 0, 7); ctx.arc(66, 34, 22, 0, 7); ctx.fill();
-  ctx.fillStyle = '#ffd86b'; star(-66, 12, 9, 4, 5); star(66, 12, 9, 4, 5);
-  ctx.fillStyle = '#ffe3d3'; ctx.beginPath(); ctx.arc(0, 8, 56, 0, 7); ctx.fill();
-  ctx.fillStyle = '#ff8fb8';
-  ctx.beginPath(); ctx.moveTo(-58, 0);
-  ctx.quadraticCurveTo(-50,-40, -20,-30); ctx.quadraticCurveTo(-8,-14, 4,-30);
-  ctx.quadraticCurveTo(22,-12, 30,-32); ctx.quadraticCurveTo(54,-30, 58, 0);
-  ctx.lineTo(56,-50); ctx.lineTo(-56,-50); ctx.closePath(); ctx.fill();
-  const blink = (t % 4100) < 130 ? .12 : 1;
-  ctx.fillStyle = '#2a1b3d';
-  ctx.beginPath(); ctx.ellipse(-21, 10, 8.5, 11.5*blink, 0, 0, 7); ctx.ellipse(21, 10, 8.5, 11.5*blink, 0, 0, 7); ctx.fill();
-  if (blink === 1) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-18, 5, 3.2, 0, 7); ctx.arc(24, 5, 3.2, 0, 7); ctx.fill(); }
-  ctx.fillStyle = 'rgba(255,120,150,.45)';
-  ctx.beginPath(); ctx.ellipse(-36, 26, 11, 6.5, 0, 0, 7); ctx.ellipse(36, 26, 11, 6.5, 0, 0, 7); ctx.fill();
-  const talking = now < S.talkUntil;
-  if (talking) {
-    ctx.fillStyle = '#b8455f';
-    ctx.beginPath(); ctx.ellipse(0, 33, 6, 3 + Math.abs(Math.sin(t/85))*4, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(shake, -128);
+  ctx.beginPath(); ctx.ellipse(0, 10, 92, 70, 0, 0, 7); outlined(M.hair);           // bob
+  ctx.beginPath(); ctx.ellipse(0, 8, 80, 61, 0, 0, 7);                                  // face
+  ctx.fillStyle = M.face; ctx.fill();
+  ctx.save(); ctx.clip();                                                               // fringe, clipped to face
+  ctx.fillStyle = M.hair; ctx.beginPath(); ctx.moveTo(-90,-60); ctx.lineTo(90,-60); ctx.lineTo(90,-22);
+  for (let i=0;i<5;i++){ const x = 90 - (i+1)*36; ctx.quadraticCurveTo(x+18, -4, x, -22); }
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = M.hairDark; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-90,-22); for (let i=0;i<5;i++){ const x = -90 + (i+1)*36; ctx.quadraticCurveTo(x-18, -4, x, -22); } ctx.stroke();
+  ctx.restore();
+  ctx.lineWidth = 5; ctx.strokeStyle = M.line; ctx.beginPath(); ctx.ellipse(0, 8, 80, 61, 0, 0, 7); ctx.stroke();
+  // star hair clip
+  ctx.fillStyle = M.star; star(-70, 34, 12, 5.5, 5); ctx.lineWidth = 3; ctx.strokeStyle = M.line; ctx.stroke();
+  // face details
+  const blink = (t % 4100) < 130 ? .15 : 1;
+  ctx.fillStyle = M.line;
+  ctx.beginPath(); ctx.ellipse(-30, 18, 6.5, 9*blink, 0, 0, 7); ctx.ellipse(30, 18, 6.5, 9*blink, 0, 0, 7); ctx.fill();
+  if (blink === 1) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-28, 14, 2.3, 0, 7); ctx.arc(32, 14, 2.3, 0, 7); ctx.fill(); }
+  ctx.fillStyle = M.blush;
+  ctx.beginPath(); ctx.ellipse(-52, 34, 12, 7, 0, 0, 7); ctx.ellipse(52, 34, 12, 7, 0, 0, 7); ctx.fill();
+  if (now < S.talkUntil) {
+    ctx.fillStyle = '#d9577a';
+    ctx.beginPath(); ctx.ellipse(0, 36, 5, 2.5 + Math.abs(Math.sin(t/85))*3.5, 0, 0, 7); ctx.fill();
   } else {
-    ctx.strokeStyle = '#2a1b3d'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(0, 26, 8, .25, Math.PI-.25); ctx.stroke();
+    ctx.strokeStyle = M.line; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-7, 33); ctx.quadraticCurveTo(-3.5, 38, 0, 34); ctx.quadraticCurveTo(3.5, 38, 7, 33); ctx.stroke();
   }
-  // hat
-  ctx.fillStyle = '#3d2f7a';
-  ctx.beginPath(); ctx.moveTo(-46,-50);
-  ctx.quadraticCurveTo(-20,-120, 18,-162); ctx.quadraticCurveTo(46,-188, 70,-160);
-  ctx.quadraticCurveTo(50,-168, 34,-140); ctx.quadraticCurveTo(26,-96, 48,-50); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#ffd86b'; star(70,-160,7,3,5);
-  ctx.fillStyle = '#4b3a93';
-  ctx.beginPath(); ctx.ellipse(0,-46, 86, 17, 0, 0, 7); ctx.fill();
-  ctx.strokeStyle = '#ff8fb8'; ctx.lineWidth = 10; ctx.lineCap = 'butt';
-  ctx.beginPath(); ctx.moveTo(-43,-62); ctx.quadraticCurveTo(0,-54, 44,-62); ctx.stroke();
-  ctx.fillStyle = '#ffd86b'; star(0,-60, 12, 5, 5);
+  // small tilted witch hat
+  ctx.save(); ctx.translate(30, -50); ctx.rotate(.3);
+  ctx.beginPath(); ctx.ellipse(0, 0, 64, 13, 0, 0, 7); outlined(M.hat);
+  ctx.beginPath(); ctx.moveTo(-36,-3);
+  ctx.quadraticCurveTo(-20,-58, 4,-88); ctx.quadraticCurveTo(22,-110, 42,-96);
+  ctx.quadraticCurveTo(26,-92, 20,-70); ctx.quadraticCurveTo(24,-34, 36,-3); ctx.closePath();
+  outlined(M.hat);
+  ctx.strokeStyle = M.band; ctx.lineWidth = 10; ctx.lineCap = 'butt';
+  ctx.beginPath(); ctx.moveTo(-31,-15); ctx.quadraticCurveTo(0,-9, 31,-15); ctx.stroke();
+  ctx.lineCap = 'round';
+  ctx.fillStyle = M.star; star(0,-14, 11, 5, 5); ctx.lineWidth = 3; ctx.strokeStyle = M.line; ctx.stroke();
+  ctx.fillStyle = M.star; star(42,-96, 6, 2.6, 5);
+  ctx.restore();
   ctx.restore();
   ctx.restore();
 }
@@ -824,3 +855,5 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(positionSa
 requestAnimationFrame(t=>{ last = t; requestAnimationFrame(frame); });
 })();
 </script>
+</body>
+</html>
